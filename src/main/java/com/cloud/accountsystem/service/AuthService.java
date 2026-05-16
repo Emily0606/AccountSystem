@@ -3,6 +3,7 @@ package com.cloud.accountsystem.service;
 import com.cloud.accountsystem.dto.request.LoginRequestDTO;
 import com.cloud.accountsystem.dto.request.RegisterRequestDTO;
 import com.cloud.accountsystem.dto.response.AuthResponseDTO;
+import com.cloud.accountsystem.entity.RefreshToken;
 import com.cloud.accountsystem.entity.User;
 import com.cloud.accountsystem.entity.UserStatus;
 import com.cloud.accountsystem.exception.AccountLockedException;
@@ -14,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -22,10 +24,12 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final RefreshTokenService refreshTokenService;
 
     @Value("${jwt.expiration-ms}")
     private long expirationMs;
 
+    @Transactional
     public void register(RegisterRequestDTO request) {
         if (userRepository.existsByAccount(request.getAccount())) {
             throw new ConflictException("帳號已存在");
@@ -45,6 +49,7 @@ public class AuthService {
         userRepository.save(user);
     }
 
+    @Transactional
     public AuthResponseDTO login(LoginRequestDTO request) {
         User user = userRepository.findByAccount(request.getAccount())
                 // 帳號不存在時回傳與密碼錯誤相同的訊息，避免讓外部探知帳號是否存在
@@ -63,8 +68,33 @@ public class AuthService {
             throw new UnauthorizedException("帳號或密碼錯誤");
         }
 
+        return buildAuthResponse(user);
+    }
+
+    // Token Rotation：撤銷舊的 Refresh Token 並發放全新的 Access Token + Refresh Token
+    @Transactional
+    public AuthResponseDTO refresh(String rawRefreshToken) {
+        RefreshToken token = refreshTokenService.validate(rawRefreshToken);
+        User user = token.getUser();
+
+        if (user.getStatus() != UserStatus.ACTIVE) {
+            throw new UnauthorizedException("帳號狀態異常，請重新登入");
+        }
+
+        refreshTokenService.revoke(token);
+        return buildAuthResponse(user);
+    }
+
+    // 冪等登出：Token 不存在或已撤銷時靜默成功
+    @Transactional
+    public void logout(String rawRefreshToken) {
+        refreshTokenService.revokeIfExists(rawRefreshToken);
+    }
+
+    private AuthResponseDTO buildAuthResponse(User user) {
         return AuthResponseDTO.builder()
                 .accessToken(jwtUtil.generateToken(user))
+                .refreshToken(refreshTokenService.create(user))
                 .tokenType("Bearer")
                 .expiresIn(expirationMs / 1000)
                 .build();

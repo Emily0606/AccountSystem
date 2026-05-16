@@ -21,6 +21,9 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class AuthService {
 
+    // 連續登入失敗達此上限後鎖定帳號
+    private static final int MAX_LOGIN_FAIL_COUNT = 3;
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
@@ -49,7 +52,9 @@ public class AuthService {
         userRepository.save(user);
     }
 
-    @Transactional
+    // noRollbackFor：密碼錯誤時需先 save 失敗計數再拋例外
+    // 若不設定，RuntimeException 會導致 Transaction 回滾，計數永遠無法寫入 DB
+    @Transactional(noRollbackFor = UnauthorizedException.class)
     public AuthResponseDTO login(LoginRequestDTO request) {
         User user = userRepository.findByAccount(request.getAccount())
                 // 帳號不存在時回傳與密碼錯誤相同的訊息，避免讓外部探知帳號是否存在
@@ -65,8 +70,18 @@ public class AuthService {
         }
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            int failCount = user.getLoginFailCount() + 1;
+            user.setLoginFailCount(failCount);
+            if (failCount >= MAX_LOGIN_FAIL_COUNT) {
+                user.setStatus(UserStatus.LOCKED);
+            }
+            userRepository.save(user);
             throw new UnauthorizedException("帳號或密碼錯誤");
         }
+
+        // 登入成功，重置失敗計數
+        user.setLoginFailCount(0);
+        userRepository.save(user);
 
         return buildAuthResponse(user);
     }

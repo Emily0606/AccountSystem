@@ -67,6 +67,12 @@ public class RefreshTokenService {
         refreshTokenRepository.save(token);
     }
 
+    // 刪除帳號時使用：立即撤銷所有裝置的有效 Session
+    @Transactional
+    public void revokeAllForUser(Long userId) {
+        refreshTokenRepository.revokeAllActiveByUserId(userId);
+    }
+
     // 登出使用：Token 不存在或已撤銷時靜默成功，保持冪等
     @Transactional
     public void revokeIfExists(String rawToken) {

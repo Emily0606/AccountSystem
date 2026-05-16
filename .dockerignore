@@ -1,0 +1,10 @@
+.gradle
+build
+.idea
+*.iml
+.git
+.claude
+.DS_Store
+README.md
+PLANNING.md
+CLAUDE.md

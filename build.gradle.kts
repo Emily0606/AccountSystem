@@ -25,6 +25,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     // JDBC 驅動由 JVM 在執行期動態載入，不需要參與編譯
     runtimeOnly("com.mysql:mysql-connector-j")
+    implementation("org.flywaydb:flyway-mysql")
     // jjwt 將 API 與實作分離；只有 API 需要在編譯期可見
     implementation("io.jsonwebtoken:jjwt-api:0.12.6")
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")

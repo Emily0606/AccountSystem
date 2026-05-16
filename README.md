@@ -30,7 +30,7 @@ cd AccountSystem
 把範本複製一份，命名為 `.env`：
 
 ```bash
-cp docker/.env.example .env
+cp .env.example .env
 ```
 
 用文字編輯器打開 `.env`，填入你的設定：
@@ -55,7 +55,7 @@ JWT_SECRET=your-secret-key-at-least-32-chars
 
 ```bash
 # 建置 Docker Image（會在容器內自動編譯並打包 JAR，第一次需幾分鐘）
-docker build -f docker/Dockerfile -t account-system:latest .
+docker build -f Dockerfile -t account-system:latest .
 
 # 啟動容器
 docker run -d --name account-system -p 8080:8080 --env-file .env account-system:latest

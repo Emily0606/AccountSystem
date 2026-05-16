@@ -69,6 +69,9 @@ docker run -d --name account-system -p 8080:8080 --env-file .env account-system:
 # 查看應用程式 log
 docker logs account-system
 
+# 持續追蹤 log（類似 tail -f，Ctrl+C 離開）
+docker logs -f account-system
+
 # 停止應用程式
 docker stop account-system
 

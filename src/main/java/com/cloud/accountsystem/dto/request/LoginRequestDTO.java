@@ -1,24 +1,16 @@
 package com.cloud.accountsystem.dto.request;
 
+import jakarta.validation.constraints.NotBlank;
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter
+@Setter
 public class LoginRequestDTO {
 
+    @NotBlank
     private String account;
-    private String pwdHash;
 
-    public String getAccount() {
-        return account;
-    }
-
-    public void setAccount(String account) {
-        this.account = account;
-    }
-
-    public String getPwdHash() {
-        return pwdHash;
-    }
-
-    public void setPwdHash(String pwdHash) {
-        this.pwdHash = pwdHash;
-    }
-
+    @NotBlank
+    private String password;
 }

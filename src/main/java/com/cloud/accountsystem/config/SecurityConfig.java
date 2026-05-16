@@ -56,8 +56,11 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        // 允許前端來源（VS Code Live Server 預設 port 5500）
-        config.setAllowedOrigins(List.of("http://localhost:5500"));
+        // 允許前端來源（本機開發 + GitHub Pages）
+        config.setAllowedOrigins(List.of(
+                "http://localhost:5500",
+                "https://emily0606.github.io"
+        ));
         config.setAllowedMethods(List.of("GET", "POST", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
